@@ -3,48 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Modern SaaS App</title>
+    <title>AI Art Generator</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="background-decor"></div>
-
-    <main class="container">
-        <header class="header">
-            <div class="badge">✨ Vercel Ready</div>
-            <h1>SaaS Generator</h1>
-            <p>Template aplikasi modern dengan backend Node.js. Masukkan data di bawah untuk memproses.</p>
+    <div class="container">
+        <header>
+            <div class="logo">✨ AI Vision</div>
+            <p>Create stunning art with FlatAI engine</p>
         </header>
 
-        <div class="card">
-            <div class="form-group">
-                <label for="inputData">Input Data</label>
-                <input type="text" id="inputData" placeholder="Ketik sesuatu di sini..." autocomplete="off">
+        <main>
+            <div class="input-group">
+                <label>Prompt</label>
+                <textarea id="promptInput" placeholder="A futuristic cyberpunk city with neon lights..." rows="3"></textarea>
             </div>
 
-            <button id="processBtn" onclick="sendData()">
-                <span class="btn-text">Proses Data</span>
-                <div class="loader" id="loader"></div>
-            </button>
-
-            <div id="resultArea" class="result-box hidden">
-                <div class="result-header">
-                    <span class="dot red"></span>
-                    <span class="dot yellow"></span>
-                    <span class="dot green"></span>
+            <div class="controls">
+                <div class="input-group">
+                    <label>Style</label>
+                    <select id="styleSelect">
+                        </select>
                 </div>
-                <pre id="outputCode">Waiting for input...</pre>
+                
+                <div class="input-group">
+                    <label>Ratio</label>
+                    <select id="ratioSelect">
+                        <option value="1:1">Square (1:1)</option>
+                        <option value="16:9">Landscape (16:9)</option>
+                        <option value="9:16">Portrait (9:16)</option>
+                        <option value="4:3">Classic (4:3)</option>
+                    </select>
+                </div>
             </div>
-        </div>
 
-        <footer class="footer">
-            <p>&copy; 2024 Built for Speed & Scale</p>
+            <button id="generateBtn" onclick="generateImage()">
+                <span class="btn-text">Generate Art</span>
+                <span class="loader" style="display: none;"></span>
+            </button>
+        </main>
+
+        <section id="resultSection" class="hidden">
+            <div class="image-wrapper">
+                <img id="resultImage" src="" alt="Generated AI Art">
+                <div class="image-actions">
+                    <a id="downloadLink" href="#" target="_blank" class="action-btn">Download HD</a>
+                </div>
+            </div>
+            <div class="meta-info">
+                <span id="seedInfo"></span>
+            </div>
+        </section>
+
+        <footer>
+            <p>&copy; 2024 AI Vision Generator</p>
         </footer>
-    </main>
+    </div>
 
     <script src="script.js"></script>
 </body>
