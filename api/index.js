@@ -1,6 +1,5 @@
 const axios = require('axios');
 
-// Daftar Style sesuai kode Anda
 const STYLES = {
   flataipro: 'Flat AI Pro',
   flatai: 'Flat AI Base',
@@ -29,9 +28,16 @@ const STYLES = {
   cinema_style: 'Cinema'
 };
 
+// User Agent palsu agar tidak dianggap bot
+const USER_AGENT = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+
 async function getNonce() {
   try {
-    const { data } = await axios.get('https://flatai.org/ai-image-generator-free-no-signup/');
+    const { data } = await axios.get('https://flatai.org/ai-image-generator-free-no-signup/', {
+      headers: { 'User-Agent': USER_AGENT },
+      timeout: 5000 // Maksimal 5 detik cari nonce
+    });
+
     const nonce =
       data.match(/ai_generate_image_nonce["']\s*:\s*["']([a-f0-9]{10})["']/i)?.[1] ||
       data.match(/"nonce"\s*:\s*"([a-f0-9]{10})"/i)?.[1];
@@ -39,7 +45,8 @@ async function getNonce() {
     if (!nonce) throw new Error('Nonce not found');
     return nonce;
   } catch (e) {
-    throw new Error('Failed to fetch nonce');
+    console.error("Nonce Error:", e.message);
+    throw new Error('Gagal menghubungi server AI (Nonce). Coba lagi.');
   }
 }
 
@@ -47,14 +54,6 @@ async function flatai(prompt, style, options = {}) {
   const { aspect_ratio = '1:1', seed = Math.floor(Math.random() * 4294967295) } = options;
   
   const nonce = await getNonce();
-
-  const headers = {
-    'user-agent': 'Mozilla/5.0 (Linux; Android 10)',
-    'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    'x-requested-with': 'XMLHttpRequest',
-    origin: 'https://flatai.org',
-    referer: 'https://flatai.org/ai-image-generator-free-no-signup/'
-  };
 
   const body = new URLSearchParams({
     action: 'ai_generate_image',
@@ -65,10 +64,25 @@ async function flatai(prompt, style, options = {}) {
     style_model: style
   }).toString();
 
-  const res = await axios.post('https://flatai.org/wp-admin/admin-ajax.php', body, { headers });
+  // Kita set timeout 9 detik (Vercel limit 10 detik) agar kita bisa handle errornya sendiri
+  const res = await axios.post('https://flatai.org/wp-admin/admin-ajax.php', body, { 
+    headers: {
+      'User-Agent': USER_AGENT,
+      'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'x-requested-with': 'XMLHttpRequest',
+      origin: 'https://flatai.org',
+      referer: 'https://flatai.org/ai-image-generator-free-no-signup/'
+    },
+    timeout: 9000 
+  });
 
   if (!res.data?.success) {
-    throw new Error(res.data?.data?.message || 'Generation failed');
+    // Cek pesan error dari sana
+    const msg = res.data?.data?.message || 'Gagal generate';
+    if (msg.includes('Guard')) {
+        throw new Error('Prompt diblokir filter keamanan (NSFW/Sensitif). Ganti kata-katanya.');
+    }
+    throw new Error(msg);
   }
 
   return {
@@ -79,38 +93,34 @@ async function flatai(prompt, style, options = {}) {
   };
 }
 
-// Handler utama Vercel
 module.exports = async (req, res) => {
-  // Setup CORS agar bisa diakses
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // Jika Request ke GET /api/index (untuk ambil list styles)
   if (req.method === 'GET') {
     return res.status(200).json({ styles: STYLES });
   }
 
-  // Jika Request ke POST (Generate Image)
   if (req.method === 'POST') {
     const { prompt, style, aspect_ratio } = req.body;
 
-    if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
-    if (!style || !STYLES[style]) return res.status(400).json({ error: 'Invalid style' });
+    if (!prompt) return res.status(400).json({ error: 'Isi prompt dulu!' });
 
     try {
       const result = await flatai(prompt, style, { aspect_ratio });
       return res.status(200).json(result);
     } catch (error) {
+      console.error("API Error:", error.message);
+      
+      // Jika error karena timeout
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+         return res.status(504).json({ error: 'Server AI sedang sibuk/lambat. Silakan coba lagi.' });
+      }
+
       return res.status(500).json({ error: error.message });
     }
   }
