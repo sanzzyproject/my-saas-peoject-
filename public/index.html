@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Modern SaaS App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="background-decor"></div>
+
+    <main class="container">
+        <header class="header">
+            <div class="badge">✨ Vercel Ready</div>
+            <h1>SaaS Generator</h1>
+            <p>Template aplikasi modern dengan backend Node.js. Masukkan data di bawah untuk memproses.</p>
+        </header>
+
+        <div class="card">
+            <div class="form-group">
+                <label for="inputData">Input Data</label>
+                <input type="text" id="inputData" placeholder="Ketik sesuatu di sini..." autocomplete="off">
+            </div>
+
+            <button id="processBtn" onclick="sendData()">
+                <span class="btn-text">Proses Data</span>
+                <div class="loader" id="loader"></div>
+            </button>
+
+            <div id="resultArea" class="result-box hidden">
+                <div class="result-header">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                </div>
+                <pre id="outputCode">Waiting for input...</pre>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2024 Built for Speed & Scale</p>
+        </footer>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
