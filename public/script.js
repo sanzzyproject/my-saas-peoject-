@@ -26,7 +26,6 @@ async function loadStyles() {
         console.error('Gagal memuat style, pakai default.');
     }
 }
-
 async function generateImage() {
     const prompt = promptInput.value.trim();
     if (!prompt) {
@@ -34,7 +33,6 @@ async function generateImage() {
         return;
     }
 
-    // UI Loading State
     setLoading(true);
     resultSection.classList.add('hidden');
 
@@ -49,11 +47,25 @@ async function generateImage() {
             })
         });
 
-        const data = await response.json();
+        // 1. Ambil respon sebagai text dulu, jangan langsung .json()
+        const text = await response.text();
+        let data;
 
-        if (data.error) throw new Error(data.error);
+        // 2. Coba parsing JSON secara manual
+        try {
+            data = JSON.parse(text);
+        } catch (err) {
+            // Jika gagal parse JSON, berarti Vercel mengirim HTML Error (Timeout)
+            console.error("Server Response Not JSON:", text.substring(0, 100));
+            throw new Error("Server sedang sibuk (Timeout). Coba lagi dalam beberapa detik.");
+        }
 
-        // Success
+        // 3. Cek error dari API Backend kita
+        if (!response.ok || data.error) {
+            throw new Error(data.error || 'Gagal memproses gambar.');
+        }
+
+        // Sukses
         const imageUrl = data.images[0];
         resultImage.src = imageUrl;
         downloadLink.href = imageUrl;
@@ -62,26 +74,15 @@ async function generateImage() {
         resultImage.onload = () => {
             resultSection.classList.remove('hidden');
             setLoading(false);
-            // Scroll ke hasil
             resultSection.scrollIntoView({ behavior: 'smooth' });
         };
+        // Backup jika onload macet
+        setTimeout(() => setLoading(false), 5000);
 
     } catch (error) {
-        alert('Error: ' + error.message);
+        // Tampilkan error dengan alert atau UI text
+        alert('⚠️ ' + error.message);
         setLoading(false);
     }
 }
 
-function setLoading(isLoading) {
-    generateBtn.disabled = isLoading;
-    if (isLoading) {
-        loader.style.display = 'inline-block';
-        btnText.style.display = 'none';
-    } else {
-        loader.style.display = 'none';
-        btnText.style.display = 'inline';
-    }
-}
-
-// Init
-loadStyles();
